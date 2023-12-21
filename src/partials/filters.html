@@ -4,20 +4,23 @@
          <h2>Filters:</h2>
         
          <div class="search-section">
-             <label for="search-box">Search for anything:</label>
+             <label for="search-box" class="visually-hidden">Search for anything:</label>
              <input type="text" id="search-box" name="search-box" placeholder="Search for anything">
+             <button type="submit" class="search-button">
+              <svg class="search-icon" width="14.58" height="14.58"><use xlink:href="img/sprite.svg#icon-search"></use></svg>
+            </button>
            </div>
            
            <div class="filter-section">
-             <label for="categories">Categories:</label>
+             <label for="categories" class="visually-hidden">Categories:</label>
              <select id="categories" name="categories">
-               <!-- Категорії заповнюються динамічно  -->
+               <!--заповнюються динамічно  -->
                <option value="">Categories</option> <!-- Додаємо опцію для вибору -->
              </select>
            </div>
 
            <div class="filter-section">
-             <label for="sort">Sort by:</label>
+             <label for="sort" class="visually-hidden">Sort by:</label>
              <select id="sort" name="sort">
                <option value="atoz">A to Z</option>
                <option value="ztoa">Z to A</option>

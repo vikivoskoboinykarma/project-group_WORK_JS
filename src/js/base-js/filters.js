@@ -1,68 +1,131 @@
-// Функція для побудови URL запиту на основі поточних фільтрів
-function buildQueryURL(filters) {
-    const baseUrl = "https://food-boutique.b.goit.study/api/products";
-    const queryParams = new URLSearchParams();
-  
-    if (filters.keyword) queryParams.append('keyword', filters.keyword);
-    if (filters.category) queryParams.append('category', filters.category);
-    if (filters.sortBy) queryParams.append(filters.sortBy, true);
-    queryParams.append('page', filters.page);
-    queryParams.append('limit', filters.limit);
-  
-    return `${baseUrl}?${queryParams}`;
-  }
-  
-  // Функція для оновлення списку продуктів з відповіді сервера
-  function updateProductsList(data) {
-    // Очищення поточного списку продуктів
-    // Заповнення новими даними
-    console.log(data);
-    // Тут написати код, щоб оновити DOM новими даними продуктів
-  }
-  
-  // Функція для отримання продуктів на основі поточних фільтрів
-  function fetchProducts() {
-    const filters = JSON.parse(localStorage.getItem('filters'));
-    const queryURL = buildQueryURL(filters);
-  
-    fetch(queryURL)
-      .then(response => response.json())
-      .then(data => {
-        updateProductsList(data);
-      })
-      .catch(error => {
-        console.error('Помилка при отриманні продуктів:', error);
-      });
-  }
-  
-  // Обробники подій для UI фільтра
-  document.getElementById('search-box').addEventListener('input', function() {
-    updateLocalStorage('keyword', this.value.trim());
-    fetchProducts();
+
+import SlimSelect from 'slim-select';
+
+document.addEventListener('DOMContentLoaded', function () {
+  initializeSlimSelectWithCategories();
+  initializeFilters();
+  setupEventListeners();
+});
+
+// Ініціалізація SlimSelect з категоріями, статичний список
+function initializeSlimSelectWithCategories() {
+  const categories = [
+    "Beverages",
+    "Breads_&_Bakery",
+    "Dairy",
+    "Deli",
+    "Eggs",
+    "Fresh_Produce",
+    "Frozen_Foods",
+    "Meat_&_Seafood",
+    "Pantry_Items",
+    "Prepared_Foods",
+    "Snacks"
+  ];
+
+  const categoryOptions = categories.map(category => ({
+    text: category.replace(/_/g, ' '),
+    value: category
+  }));
+  categoryOptions.unshift({ text: 'Show all', value: '' });
+
+  new SlimSelect({
+    select: '#categories',
+    data: categoryOptions
   });
-  
-  document.getElementById('categories').addEventListener('change', function() {
-    updateLocalStorage('category', this.value);
-    fetchProducts();
+}
+// або за запитом  з сервера
+//function initializeSlimSelectWithCategories() {
+//  fetch('https://your-api-url/categories')
+  //  .then(response => response.json())
+  //  .then(categories => {
+   //   const categoryOptions = categories.map(category => ({
+  //      text: category.replace(/_/g, ' '),
+  //      value: category
+   //   }));
+   //   categoryOptions.unshift({ text: 'Show all', value: '' });
+
+   //   new SlimSelect({
+   //     select: '#categories',
+   //     data: categoryOptions
+   //   });
+  //  })
+  //  .catch(error => console.error('Error fetching categories:', error));
+//}
+
+
+// Функція для ініціалізації фільтрів у локальному сховищі
+function initializeFilters() {
+  if (!localStorage.getItem('filters')) {
+    localStorage.setItem('filters', JSON.stringify({ keyword: null, category: null, page: 1, limit: 6, sort: null }));
+  }
+}
+
+// Функція для оновлення фільтрів у локальному сховищі
+function updateFilters(key, value) {
+  const filters = JSON.parse(localStorage.getItem('filters'));
+  filters[key] = value;
+  localStorage.setItem('filters', JSON.stringify(filters));
+}
+
+// Модифікована функція для оновлення фільтрів у локальному сховищі
+//function updateFilters(key, value) {
+ // const filters = JSON.parse(localStorage.getItem('filters'));
+ // filters[key] = value;
+
+  // Обнулення сторінки пагінації на 1 при зміні ключового слова, категорії або способу сортування
+ // if (key === 'keyword' || key === 'category' || key === 'sort') {
+ //   filters['page'] = 1;
+ // }
+
+  //localStorage.setItem('filters', JSON.stringify(filters));
+//}
+
+
+// Функція для встановлення обробників подій
+function setupEventListeners() {
+  const searchBox = document.getElementById('search-box');
+  const categoriesSelect = document.getElementById('categories');
+
+  // Обробка події submit для форми пошуку
+  const searchForm = document.querySelector('.search-form');
+  searchForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    updateFilters('keyword', searchBox.value);
+    fetchFilteredProducts();
   });
-  
-  document.getElementById('sort').addEventListener('change', function() {
-    // Відображення значення сортування UI у параметри сортування API
-    const sortMapping = {
-      'atoz': 'byABC',
-      'ztoa': 'byABC',
-      'cheap': 'byPrice',
-      'expensive': 'byPrice',
-      'popular': 'byPopularity',
-      'notpopular': 'byPopularity',
-      'showall': null
-    };
-    
-    const sortValue = sortMapping[this.value];
-    updateLocalStorage('sortBy', sortValue);
-    fetchProducts();
+
+  // Обробка зміни категорії
+  categoriesSelect.addEventListener('change', function () {
+    updateFilters('category', this.value);
+    fetchFilteredProducts();
   });
-  
-  // Ініціалізація
-  initialize();
-  
+
+  // Обробка зміни сортування
+  const sortSelect = document.getElementById('sort');
+  sortSelect.addEventListener('change', function () {
+    updateFilters('sort', this.value);
+    fetchFilteredProducts();
+  });
+ 
+}
+
+// Функція для відправлення запиту на сервер з поточними фільтрами
+function fetchFilteredProducts() {
+  const filters = JSON.parse(localStorage.getItem('filters'));
+  const queryParameters = new URLSearchParams(filters).toString();
+  const requestURL = `https://your-api-url/products?${queryParameters}`;
+
+  fetch(requestURL)
+    .then(response => response.json())
+    .then(data => {
+      updateProductsList(data);
+    })
+    .catch(error => console.error('Error fetching products:', error));
+}
+
+// Функція для оновлення ProductsList
+function updateProductsList(data) {
+  // Логіка для оновлення ProductsList на основі отриманих даних
+  // ...
+}
